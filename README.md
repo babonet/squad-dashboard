@@ -2,6 +2,8 @@
 
 A **read-only** web dashboard that visualizes the live state of any Squad-enabled repository. Point it at a repo with a `.squad/` directory and it renders the team's roster, routing, models, casting, decisions, sessions, ceremonies, skills, analytics, and health — straight from the files, with no database and no writes.
 
+> Built for [Squad](https://github.com/bradygaster/squad) — the agentic team framework that powers `.squad/` repositories.
+
 ## What it is
 
 - **`tools/squad-dashboard.html`** — a single self-contained UI (no build step, no CDN). Uses the Clawpilot theme with automatic light/dark detection.
