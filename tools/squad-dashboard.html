@@ -441,6 +441,10 @@
         <div id="ralphQueue"></div>
       </div>
       <div class="card">
+        <h3>Latest Ralph update</h3>
+        <div id="ralphLastUpdate" style="color:var(--cp-text-muted);font-size:13px"></div>
+      </div>
+      <div class="card">
         <h3>Open follow-ups (from latest session)</h3>
         <ul id="ralphFollowups" style="margin:0;padding-left:18px;color:var(--cp-text-muted);font-size:13px"></ul>
       </div>
@@ -645,9 +649,15 @@
     document.getElementById("r-state").textContent = DATA.ralph.state;
     document.getElementById("r-queue").textContent = DATA.ralph.queue;
     document.getElementById("r-inbox").textContent = DATA.ralph.inbox;
-    document.getElementById("ralphQueue").innerHTML = DATA.ralph.queue === 0
-      ? '<div class="empty">Queue empty — monitor idle. Say <code>Ralph, go</code> to start picking up backlog work.</div>'
-      : "";
+    const items = DATA.ralph.queueItems || [];
+    document.getElementById("ralphQueue").innerHTML = items.length
+      ? `<ul style="margin:0;padding-left:18px;font-size:13px">${items.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
+      : DATA.ralph.queue > 0
+        ? `<div class="empty">${DATA.ralph.queue} item(s) queued.</div>`
+        : '<div class="empty">Queue empty — monitor idle. Say <code>Ralph, go</code> to start picking up backlog work.</div>';
+    document.getElementById("ralphLastUpdate").innerHTML = DATA.ralph.lastUpdate
+      ? esc(DATA.ralph.lastUpdate)
+      : '<span class="empty">No recorded updates yet.</span>';
     document.getElementById("ralphFollowups").innerHTML = DATA.ralph.followups.map((x) => `<li>${esc(x)}</li>`).join("");
   }
 
@@ -778,6 +788,11 @@
   // ---- Init ----
   renderAll();   // paint immediately from the snapshot
   loadLive();    // then upgrade to live data if the server is reachable
+
+  // Auto-refresh: poll the server every 10s so the dashboard tracks live .squad/
+  // changes (e.g. Ralph committing sessions/decisions) without manual refresh.
+  // Skips polling while the tab is hidden to avoid needless requests.
+  setInterval(() => { if (!document.hidden) loadLive(); }, 10000);
 </script>
 </body>
 </html>

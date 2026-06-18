@@ -348,10 +348,7 @@ async function buildPayload() {
     });
   const deliverables = [...new Set(sessions.flatMap((s) => s.outputs))];
 
-  const ralph = {
-    state: "idle", queue: 0, inbox: await inboxCount(),
-    followups: [], // populated from the newest session's "## Next" by withFollowups()
-  };
+  const ralph = await parseRalph();
 
   const teamRoot = SQUAD;
   return {
@@ -369,6 +366,47 @@ async function projectContext() {
   const created = (text.match(/\*\*Created:\*\*\s*(.+)/) || [])[1]?.trim() || "—";
   const proj = (text.match(/\*\*Project:\*\*\s*(.+)/) || [])[1]?.trim() || "InnoSquad";
   return { name: proj, owner, universe, created };
+}
+
+// Derive Ralph's monitor state from the live .squad/ files (identity/now.md +
+// agents/ralph/history.md). Falls back to "idle" when there's no active focus.
+async function parseRalph() {
+  const inbox = await inboxCount();
+  const nowText = (await read(join(SQUAD, "identity", "now.md"))) || "";
+  const idleHints = /no active task|awaiting|idle|standby|no current focus/i;
+  // Strip headings and bullet markers to see whether there's substantive focus content.
+  const focusBody = nowText.replace(/^#.*$/gm, "").replace(/[-*]\s*/g, "").trim();
+  let state = focusBody && !idleHints.test(nowText) ? "active" : "idle";
+  let queue = 0;
+  let queueItems = [];
+  let statusUpdated = "";
+
+  // Authoritative live heartbeat: Ralph may write identity/ralph-status.md while it
+  // runs. When present, it overrides the now.md-derived state and provides queue depth.
+  const status = await read(join(SQUAD, "identity", "ralph-status.md"));
+  if (status) {
+    const s = (status.match(/^\s*state:\s*(\S+)/im) || [])[1];
+    if (s) state = s.toLowerCase();
+    statusUpdated = (status.match(/^\s*updated_at:\s*(\S+)/im) || [])[1] || "";
+    queueItems = bullets(section(status, /^##\s+Queue/i));
+    const q = (status.match(/^\s*queue:\s*(\d+)/im) || [])[1];
+    queue = q !== undefined ? Number(q) : queueItems.length;
+  }
+
+  // Newest dated top-level bullet from Ralph's history.md "## Updates", if present.
+  let lastUpdate = "";
+  const hist = await read(join(SQUAD, "agents", "ralph", "history.md"));
+  if (hist) {
+    const dated = section(hist, /^##\s+Updates/i)
+      .filter((l) => /^[-*]\s+(\*\*)?\d{4}-\d{2}-\d{2}/.test(l));
+    if (dated.length) {
+      lastUpdate = dated[dated.length - 1].replace(/^[-*]\s+/, "").replace(/\*\*/g, "").trim();
+    }
+  }
+  return {
+    state, queue, queueItems, statusUpdated, inbox, lastUpdate,
+    followups: [], // populated from the newest session's "## Next" by withFollowups()
+  };
 }
 
 // fix follow-ups: read newest log's "## Next" directly
