@@ -34,14 +34,13 @@ dashboard exists and how to launch it.
 This repo is a Squad marketplace source. Register it, then browse/install:
 
 ```
-squad plugin marketplace add github/REPLACE_ME/squad-dashboard
+squad plugin marketplace add github/babonet/squad-dashboard
 squad plugin marketplace browse squad-dashboard
 squad plugin install squad-dashboard
 squad plugin enable squad-dashboard
 ```
 
-> Replace `REPLACE_ME` with your GitHub owner (user or org) once the repo is public,
-> and update the `repository.url` / `upstream.docs` fields in `plugin.manifest.json` to match.
+> Requires Squad CLI v0.10.0+. On earlier versions, copy the files in manually (see below).
 
 ## Get the dashboard files
 
@@ -50,8 +49,8 @@ server finds `.squad/` on its own):
 
 ```
 # from your project root
-curl -O https://raw.githubusercontent.com/REPLACE_ME/squad-dashboard/main/tools/squad-dashboard.html --output-dir tools
-curl -O https://raw.githubusercontent.com/REPLACE_ME/squad-dashboard/main/tools/squad-server.mjs --output-dir tools
+curl -O https://raw.githubusercontent.com/babonet/squad-dashboard/main/tools/squad-dashboard.html --output-dir tools
+curl -O https://raw.githubusercontent.com/babonet/squad-dashboard/main/tools/squad-server.mjs --output-dir tools
 ```
 
 …or just clone the repo and copy `tools/`.

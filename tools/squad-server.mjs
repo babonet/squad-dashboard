@@ -75,6 +75,23 @@ function parseTable(lines) {
   return data;
 }
 
+// Collect every pipe-table in the document as a separate cell-row array
+// (first row of each = its header). Tables are split on any non-table line.
+function allTables(text) {
+  const tables = [];
+  let block = [];
+  const flush = () => {
+    if (block.length) { const rows = parseTable(block); if (rows.length) tables.push(rows); }
+    block = [];
+  };
+  for (const l of text.split(/\r?\n/)) {
+    if (l.trim().startsWith("|")) block.push(l);
+    else flush();
+  }
+  flush();
+  return tables;
+}
+
 // Slice the lines belonging to a `## Heading` section (until the next same-or-higher heading).
 function section(text, headingRegex, level = 2) {
   const lines = text.split(/\r?\n/);
@@ -153,10 +170,30 @@ async function parseRouting() {
   const text = await read(join(SQUAD, "routing.md"));
   const routing = [], issueRouting = [];
   if (!text) return { routing, issueRouting };
+
+  // Preferred: an explicit "## Routing Table" (work type | who | example).
   for (const cells of parseTable(section(text, /^##\s+Routing Table/i))) {
     if (/^work type$/i.test(cells[0])) continue;
     routing.push({ type: cells[0], who: cells[1], ex: cells[2] || "" });
   }
+
+  // Fallback for other routing.md layouts: scan every table and keep the ones
+  // that map something (signal / domain / decision) → an owner column.
+  if (!routing.length) {
+    const clean = (s) => (s || "").replace(/[*_`]/g, "").trim();
+    for (const rows of allTables(text)) {
+      const header = rows[0].map((c) => c.toLowerCase());
+      const whoIdx = header.findIndex((h) => /owner|who|assignee|lead/.test(h));
+      if (whoIdx < 1) continue; // need an owner column that isn't the first column
+      const exIdx = header.findIndex((h, i) => i !== whoIdx && i !== 0);
+      for (const cells of rows.slice(1)) {
+        const type = clean(cells[0]), who = clean(cells[whoIdx]);
+        if (!type || !who) continue;
+        routing.push({ type, who, ex: exIdx >= 0 ? clean(cells[exIdx]) : "" });
+      }
+    }
+  }
+
   for (const cells of parseTable(section(text, /^##\s+Issue Routing/i))) {
     if (/^label$/i.test(cells[0])) continue;
     issueRouting.push({ label: cells[0].replace(/`/g, ""), action: cells[1], who: cells[2] || "" });

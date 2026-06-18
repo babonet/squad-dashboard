@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "github",
-    "url": "https://github.com/REPLACE_ME/squad-dashboard"
+    "url": "https://github.com/babonet/squad-dashboard"
   },
   "upstream": {
-    "docs": "https://github.com/REPLACE_ME/squad-dashboard",
+    "docs": "https://github.com/babonet/squad-dashboard",
     "requires": {
       "node": ">=18"
     },
-    "notes": "Read-only viewer distributed via this GitHub repository. The HTML UI and the Node read server are NOT installed by Squad (executable/non-.squad files are not allowed in plugin payloads). After registering the marketplace, copy tools/squad-dashboard.html and tools/squad-server.mjs from this repo into your project, then run: node tools/squad-server.mjs (open http://localhost:4317). The server auto-locates .squad/ by walking up from its own location; override with SQUAD_ROOT, and the port with SQUAD_PORT."
+    "notes": "Read-only viewer. The HTML UI and the Node read server are NOT installed by Squad (executable/non-.squad files are not allowed in plugin payloads); copy tools/squad-dashboard.html and tools/squad-server.mjs into your project and run: node tools/squad-server.mjs (open http://localhost:4317). The server auto-locates .squad/ by walking up from its own location; override with SQUAD_ROOT, and the port with SQUAD_PORT."
   },
   "files": [
     {
