@@ -4,10 +4,12 @@
   "description": "A read-only web dashboard for any Squad-enabled repo. Visualizes the live .squad/ state — roster, routing, models, casting, decisions, sessions, ceremonies, skills, analytics, and health — served by a zero-dependency Node read server.",
   "type": "module",
   "bin": {
-    "squad-dashboard": "tools/squad-server.mjs"
+    "squad-dashboard": "tools/squad-server.mjs",
+    "squad-dashboard-install": "tools/squad-install.mjs"
   },
   "files": [
     "tools/squad-server.mjs",
+    "tools/squad-install.mjs",
     "tools/squad-dashboard.html",
     "knowledge/squad-dashboard.md",
     "plugin.manifest.json",

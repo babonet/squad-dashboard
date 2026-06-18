@@ -39,8 +39,20 @@ SQUAD_ROOT=/path/to/repo SQUAD_PORT=8080 npx squad-dashboard
 > npx downloads the package on demand and runs it from its cache — it never writes to
 > your repo. To pin a version, use `npx squad-dashboard@1.0.0`.
 
-## How distribution works
+### Install the knowledge guide without the Squad CLI
 
+`npx squad-dashboard` only runs the read server — it never registers the plugin. If you
+don't have the Squad CLI but still want your agents to know the dashboard exists, run:
+
+```
+npx -p squad-dashboard squad-dashboard-install
+```
+
+This copies the declarative knowledge guide into `.squad/knowledge/squad-dashboard/`
+(mirroring what `squad plugin install` does). It writes that single file and nothing
+else. Override the detected repo with `SQUAD_ROOT=/path/to/repo`.
+
+## How distribution works
 
 Squad plugins are **declarative-only**: a plugin payload may not contain scripts or
 executable files, and may only write into approved `.squad/` roots. The dashboard's
