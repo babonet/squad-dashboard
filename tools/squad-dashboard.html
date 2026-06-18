@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Squad Management — InnoSquad</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+  :root {
+    color-scheme: light;
+    --cp-bg: #f7f4ef;
+    --cp-bg-elevated: #fcfbf8;
+    --cp-surface: #ffffff;
+    --cp-surface-soft: #f5f5f5;
+    --cp-border: #dedede;
+    --cp-border-strong: #919191;
+    --cp-text: #242424;
+    --cp-text-muted: #5c5c5c;
+    --cp-text-soft: #6f6f6f;
+    --cp-accent: #b11f4b;
+    --cp-accent-hover: #9a1a41;
+    --cp-accent-soft: rgba(177, 31, 75, 0.08);
+    --cp-accent-fg: #ffffff;
+    --cp-success: #16a34a;
+    --cp-danger: #dc2626;
+    --cp-warning: #f59e0b;
+    --cp-link: #0078d4;
+    --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+    --cp-overlay: rgba(255, 255, 255, 0.8);
+    --cp-panel: rgba(255, 255, 255, 0.86);
+    --cp-panel-strong: rgba(255, 255, 255, 0.96);
+    --cp-sheen: rgba(255, 255, 255, 0.55);
+    --cp-highlight: rgba(177, 31, 75, 0.12);
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --cp-bg: #3d3b3a;
+    --cp-bg-elevated: #343231;
+    --cp-surface: #292929;
+    --cp-surface-soft: #2e2e2e;
+    --cp-border: #474747;
+    --cp-border-strong: #5f5f5f;
+    --cp-text: #dedede;
+    --cp-text-muted: #919191;
+    --cp-text-soft: #b0b0b0;
+    --cp-accent: #fd8ea1;
+    --cp-accent-hover: #fb7b91;
+    --cp-accent-soft: rgba(253, 142, 161, 0.14);
+    --cp-accent-fg: #1a1a1a;
+    --cp-success: #4ade80;
+    --cp-danger: #f87171;
+    --cp-warning: #fbbf24;
+    --cp-link: #4da6ff;
+    --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+    --cp-overlay: rgba(41, 41, 41, 0.88);
+    --cp-panel: rgba(41, 41, 41, 0.72);
+    --cp-panel-strong: rgba(41, 41, 41, 0.96);
+    --cp-sheen: rgba(255, 255, 255, 0.04);
+    --cp-highlight: rgba(253, 142, 161, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--cp-bg);
+    color: var(--cp-text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  code, .mono { font-family: Consolas, "Courier New", Courier, monospace; }
+
+  .layout { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--cp-bg-elevated);
+    border-right: 1px solid var(--cp-border);
+    padding: 20px 14px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 18px; }
+  .brand .logo {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--cp-accent); color: var(--cp-accent-fg);
+    display: grid; place-items: center; font-weight: 700; font-size: 16px;
+  }
+  .brand .title { font-weight: 700; font-size: 15px; }
+  .brand .sub { font-size: 11px; color: var(--cp-text-muted); }
+
+  .nav { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+  .nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--cp-text-soft); padding: 12px 10px 4px; }
+  .nav button {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; text-align: left;
+    background: transparent; border: none; cursor: pointer;
+    color: var(--cp-text-muted); font-size: 13.5px;
+    padding: 8px 10px; border-radius: 8px;
+    font-family: inherit;
+  }
+  .nav button .ico { width: 18px; text-align: center; }
+  .nav button:hover { background: var(--cp-surface-soft); color: var(--cp-text); }
+  .nav button.active { background: var(--cp-accent-soft); color: var(--cp-accent); font-weight: 600; }
+  .nav .badge {
+    margin-left: auto; font-size: 11px; background: var(--cp-surface-soft);
+    color: var(--cp-text-muted); border-radius: 999px; padding: 1px 8px; min-width: 20px; text-align: center;
+  }
+
+  .theme-toggle {
+    margin-top: 16px; width: 100%; padding: 8px; border-radius: 8px;
+    border: 1px solid var(--cp-border); background: var(--cp-surface);
+    color: var(--cp-text-muted); cursor: pointer; font-family: inherit; font-size: 12.5px;
+  }
+  .theme-toggle:hover { color: var(--cp-text); border-color: var(--cp-border-strong); }
+
+  /* Main */
+  .main { padding: 28px 36px 60px; max-width: 1100px; }
+  .page-head { margin-bottom: 22px; }
+  .page-head h1 { font-size: 22px; margin: 0 0 4px; }
+  .page-head p { margin: 0; color: var(--cp-text-muted); font-size: 13.5px; }
+
+  .ro-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--cp-text-muted);
+    border: 1px solid var(--cp-border); border-radius: 999px; padding: 2px 10px;
+    background: var(--cp-surface-soft);
+  }
+  .ro-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cp-warning); }
+  .ro-pill.live .dot { background: var(--cp-success); }
+  .ro-pill.snapshot .dot { background: var(--cp-warning); }
+  .refresh-btn {
+    font-size: 12px; vertical-align: middle; margin-left: 8px;
+    padding: 3px 10px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--cp-border); background: var(--cp-surface); color: var(--cp-text-muted);
+    font-family: inherit;
+  }
+  .refresh-btn:hover { color: var(--cp-text); border-color: var(--cp-border-strong); }
+  .refresh-btn.spin { opacity: .6; pointer-events: none; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card {
+    background: var(--cp-surface); border: 1px solid var(--cp-border);
+    border-radius: 16px; padding: 18px 20px; margin-bottom: 16px;
+    box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+  }
+  .card h2 { font-size: 15px; margin: 0 0 14px; }
+  .card h3 { font-size: 13px; margin: 0 0 8px; color: var(--cp-text-muted); text-transform: uppercase; letter-spacing: .03em; }
+
+  .grid { display: grid; gap: 14px; }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 860px) { .grid.cols-3, .grid.cols-2 { grid-template-columns: 1fr; } }
+
+  .stat { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 14px; padding: 16px 18px; }
+  .stat .n { font-size: 28px; font-weight: 700; color: var(--cp-accent); }
+  .stat .l { font-size: 12.5px; color: var(--cp-text-muted); margin-top: 2px; }
+
+  /* Roster cards */
+  .roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .member {
+    background: var(--cp-surface); border: 1px solid var(--cp-border);
+    border-radius: 14px; padding: 16px; cursor: pointer; transition: border-color .12s, transform .12s;
+  }
+  .member:hover { border-color: var(--cp-accent); transform: translateY(-1px); }
+  .member .top { display: flex; align-items: center; gap: 12px; }
+  .member .avatar {
+    width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+    font-size: 22px; background: var(--cp-accent-soft);
+  }
+  .member .name { font-weight: 700; font-size: 15px; }
+  .member .role { font-size: 12.5px; color: var(--cp-text-muted); }
+  .member .meta { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .tag {
+    font-size: 11px; padding: 2px 9px; border-radius: 999px;
+    background: var(--cp-surface-soft); color: var(--cp-text-muted); border: 1px solid var(--cp-border);
+  }
+  .tag.ok { color: var(--cp-success); border-color: color-mix(in srgb, var(--cp-success) 35%, transparent); }
+  .tag.review { color: var(--cp-accent); border-color: color-mix(in srgb, var(--cp-accent) 35%, transparent); background: var(--cp-accent-soft); }
+  .tag.model { font-family: Consolas, monospace; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--cp-border); vertical-align: top; }
+  th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--cp-text-soft); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  td .who { font-weight: 600; }
+
+  .search {
+    width: 100%; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid var(--cp-border); background: var(--cp-surface);
+    color: var(--cp-text); font-family: inherit; font-size: 13.5px; margin-bottom: 14px;
+  }
+  .search:focus { outline: none; border-color: var(--cp-accent); }
+
+  /* Decisions timeline */
+  .timeline { position: relative; padding-left: 18px; }
+  .timeline::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: var(--cp-border); }
+  .decision { position: relative; margin-bottom: 16px; }
+  .decision::before {
+    content: ""; position: absolute; left: -16px; top: 6px; width: 10px; height: 10px;
+    border-radius: 50%; background: var(--cp-accent); border: 2px solid var(--cp-bg);
+  }
+  .decision .d-date { font-size: 11.5px; color: var(--cp-text-soft); font-family: Consolas, monospace; }
+  .decision .d-title { font-weight: 600; font-size: 14px; margin: 2px 0 4px; }
+  .decision .d-meta { font-size: 12px; color: var(--cp-text-muted); margin-bottom: 6px; }
+  .decision .d-body { font-size: 13px; color: var(--cp-text-muted); }
+
+  .status-chip { font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--cp-border); }
+  .status-chip.proposed { color: var(--cp-warning); border-color: color-mix(in srgb, var(--cp-warning) 40%, transparent); }
+  .status-chip.findings { color: var(--cp-link); border-color: color-mix(in srgb, var(--cp-link) 40%, transparent); }
+  .status-chip.delivered { color: var(--cp-success); border-color: color-mix(in srgb, var(--cp-success) 40%, transparent); }
+
+  .empty { color: var(--cp-text-soft); font-size: 13px; padding: 24px; text-align: center; }
+
+  .kv { display: grid; grid-template-columns: 160px 1fr; gap: 6px 16px; font-size: 13.5px; }
+  .kv dt { color: var(--cp-text-muted); }
+  .kv dd { margin: 0; }
+
+  /* Drawer */
+  .drawer-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; z-index: 40;
+  }
+  .drawer-overlay.open { display: block; }
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100vh; width: 460px; max-width: 92vw;
+    background: var(--cp-bg-elevated); border-left: 1px solid var(--cp-border);
+    box-shadow: var(--cp-shadow); z-index: 50; transform: translateX(100%);
+    transition: transform .2s ease; overflow-y: auto; padding: 24px 26px;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer .close { float: right; background: transparent; border: none; font-size: 22px; color: var(--cp-text-muted); cursor: pointer; }
+  .drawer h2 { margin: 0 0 2px; font-size: 20px; }
+  .drawer .d-role { color: var(--cp-text-muted); margin-bottom: 16px; }
+  .drawer ul { margin: 6px 0 16px; padding-left: 18px; }
+  .drawer li { margin-bottom: 4px; font-size: 13.5px; }
+  .drawer .blurb { font-size: 13.5px; color: var(--cp-text-muted); margin-bottom: 14px; }
+  .drawer .sub-h { font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--cp-text-soft); font-weight: 600; margin: 16px 0 6px; }
+
+  .note { font-size: 12px; color: var(--cp-text-soft); margin-top: 4px; }
+  a { color: var(--cp-link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .src { font-family: Consolas, monospace; font-size: 12px; color: var(--cp-text-soft); }
+
+  /* Skills */
+  .skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .skill {
+    border: 1px solid var(--cp-border); border-radius: 12px; padding: 12px 14px; background: var(--cp-surface);
+  }
+  .skill .s-name { font-weight: 600; font-size: 13.5px; }
+  .skill .s-desc { font-size: 12px; color: var(--cp-text-muted); margin-top: 4px; }
+  .conf { font-size: 10.5px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--cp-border); float: right; }
+  .conf.high { color: var(--cp-success); border-color: color-mix(in srgb, var(--cp-success) 40%, transparent); }
+  .conf.medium { color: var(--cp-warning); border-color: color-mix(in srgb, var(--cp-warning) 40%, transparent); }
+  .conf.low { color: var(--cp-text-muted); }
+
+  /* Session cards */
+  .sess { border: 1px solid var(--cp-border); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; background: var(--cp-surface); }
+  .sess .s-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .sess .s-date { font-family: Consolas, monospace; font-size: 12px; color: var(--cp-text-soft); }
+  .sess .s-title { font-weight: 700; font-size: 15px; }
+  .sess .s-sum { font-size: 13px; color: var(--cp-text-muted); margin-top: 8px; }
+  .sess .s-who { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* Cost bars */
+  .bar-row { display: grid; grid-template-columns: 130px 1fr 44px; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12.5px; }
+  .bar-track { height: 10px; border-radius: 999px; background: var(--cp-surface-soft); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: var(--cp-accent); }
+  .bar-row .pct { text-align: right; color: var(--cp-text-muted); }
+
+  /* Health rows */
+  .hrow { display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--cp-border); }
+  .hrow:last-child { border-bottom: none; }
+  .hrow .hi { width: 20px; text-align: center; font-size: 15px; flex-shrink: 0; }
+  .hrow .ht { font-weight: 600; font-size: 13.5px; }
+  .hrow .hd { font-size: 12.5px; color: var(--cp-text-muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">S</div>
+      <div>
+        <div class="title">Squad</div>
+        <div class="sub">InnoSquad · The Matrix</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-label">Overview</div>
+      <button data-section="overview" class="active"><span class="ico">🏠</span> Dashboard</button>
+      <button data-section="roster"><span class="ico">👥</span> Roster <span class="badge" id="b-roster"></span></button>
+      <div class="nav-label">Control plane</div>
+      <button data-section="routing"><span class="ico">🧭</span> Routing</button>
+      <button data-section="config"><span class="ico">⚙️</span> Models & Config</button>
+      <button data-section="casting"><span class="ico">🎭</span> Casting</button>
+      <div class="nav-label">Activity</div>
+      <button data-section="decisions"><span class="ico">📜</span> Decisions <span class="badge" id="b-dec"></span></button>
+      <button data-section="sessions"><span class="ico">🗂️</span> Sessions <span class="badge" id="b-sess"></span></button>
+      <button data-section="ceremonies"><span class="ico">🤝</span> Ceremonies</button>
+      <button data-section="issues"><span class="ico">📋</span> Issues</button>
+      <button data-section="ralph"><span class="ico">🔄</span> Ralph Monitor</button>
+      <div class="nav-label">Insights &amp; ops</div>
+      <button data-section="skills"><span class="ico">🧠</span> Skills <span class="badge" id="b-skills"></span></button>
+      <button data-section="analytics"><span class="ico">📊</span> Analytics</button>
+      <button data-section="health"><span class="ico">🩺</span> Health <span class="badge" id="b-health"></span></button>
+    </nav>
+    <button class="theme-toggle" id="themeToggle">◐ Toggle theme</button>
+  </aside>
+
+  <main class="main">
+    <!-- OVERVIEW -->
+    <section class="section active" id="overview">
+      <div class="page-head">
+        <h1>Squad Dashboard
+          <span class="ro-pill" id="livePill"><span class="dot" id="liveDot"></span> <span id="liveLabel">Loading…</span></span>
+          <button class="refresh-btn" id="refreshBtn" title="Reload live state from .squad/">⟳ Refresh</button>
+        </h1>
+        <p id="projLine">InnoSquad — a squad to support research and innovation work. Owner: <strong>OrenMaoz</strong> · Created 2026-06-13</p>
+      </div>
+      <div class="grid cols-3">
+        <div class="stat"><div class="n" id="s-members">0</div><div class="l">Active members</div></div>
+        <div class="stat"><div class="n" id="s-reviewers">0</div><div class="l">Reviewers (gate work)</div></div>
+        <div class="stat"><div class="n" id="s-decisions">0</div><div class="l">Logged decisions</div></div>
+      </div>
+      <div class="card">
+        <h3>Now focused on</h3>
+        <div id="now-focus" style="font-size:15px;font-weight:600"></div>
+        <div class="note" id="now-updated"></div>
+      </div>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>Coordinator</h3>
+          <div class="kv">
+            <dt>Name</dt><dd>Squad (Coordinator)</dd>
+            <dt>Role</dt><dd>Routes work, enforces handoffs &amp; reviewer gates</dd>
+            <dt>Universe</dt><dd>The Matrix</dd>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Data sources</h3>
+            <div class="note">Live mode reads these <code>.squad/</code> files on every refresh (snapshot fallback when the server is offline):</div>
+          <ul style="margin:8px 0 0;padding-left:18px;color:var(--cp-text-muted);font-size:13px">
+            <li class="src">.squad/team.md</li>
+            <li class="src">.squad/routing.md</li>
+            <li class="src">.squad/decisions.md</li>
+            <li class="src">.squad/casting/registry.json</li>
+            <li class="src">.squad/config.json · ceremonies.md · identity/now.md</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROSTER -->
+    <section class="section" id="roster">
+      <div class="page-head"><h1>Team Roster</h1><p>Click a member to view their charter, responsibilities, and reviewer role.</p></div>
+      <input class="search" id="rosterSearch" placeholder="Search members by name or role…" />
+      <div class="roster" id="rosterGrid"></div>
+    </section>
+
+    <!-- ROUTING -->
+    <section class="section" id="routing">
+      <div class="page-head"><h1>Work Routing</h1><p>How the coordinator decides who handles what. Source: <span class="src">.squad/routing.md</span></p></div>
+      <div class="card">
+        <h2>Routing table</h2>
+        <table><thead><tr><th>Work type</th><th>Route to</th><th>Examples</th></tr></thead><tbody id="routingBody"></tbody></table>
+      </div>
+      <div class="card">
+        <h2>Issue routing</h2>
+        <table><thead><tr><th>Label</th><th>Action</th><th>Who</th></tr></thead><tbody id="issueRoutingBody"></tbody></table>
+      </div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="section" id="config">
+      <div class="page-head"><h1>Models &amp; Config</h1><p>Per-agent model selection (cost-first unless code is written). Source: <span class="src">.squad/config.json</span></p></div>
+      <div class="card">
+        <h2>Default model selection by role</h2>
+        <table><thead><tr><th>Member</th><th>Role</th><th>Model</th><th>Why</th></tr></thead><tbody id="modelBody"></tbody></table>
+        <div class="note">No <code>defaultModel</code> or <code>agentModelOverrides</code> set in <code>config.json</code> (version 1) — all agents use automatic, task-aware selection.</div>
+      </div>
+    </section>
+
+    <!-- CASTING -->
+    <section class="section" id="casting">
+      <div class="page-head"><h1>Casting</h1><p>Persistent character names mapped to roles. Universe: <strong>The Matrix</strong>. Source: <span class="src">.squad/casting/registry.json</span></p></div>
+      <div class="card">
+        <table><thead><tr><th>Role slug</th><th>Cast name</th><th>Universe</th><th>Created</th><th>Status</th></tr></thead><tbody id="castingBody"></tbody></table>
+      </div>
+    </section>
+
+    <!-- DECISIONS -->
+    <section class="section" id="decisions">
+      <div class="page-head"><h1>Decision Ledger</h1><p>Active decisions and findings. Source: <span class="src">.squad/decisions.md</span></p></div>
+      <input class="search" id="decSearch" placeholder="Search decisions…" />
+      <div class="card"><div class="timeline" id="decTimeline"></div></div>
+    </section>
+
+    <!-- CEREMONIES -->
+    <section class="section" id="ceremonies">
+      <div class="page-head"><h1>Ceremonies</h1><p>Team meetings that run before or after work. Source: <span class="src">.squad/ceremonies.md</span></p></div>
+      <div class="grid cols-2" id="ceremoniesGrid"></div>
+    </section>
+
+    <!-- ISSUES -->
+    <section class="section" id="issues">
+      <div class="page-head"><h1>Issues</h1><p>Open GitHub issues labeled <code>squad:{member}</code> are picked up by the named member.</p></div>
+      <div class="card">
+        <div class="empty">No issues embedded in this snapshot.<br /><span class="note">A live build would run <code>gh issue list --label "squad:*" --state open</code> and route by the routing rules.</span></div>
+      </div>
+    </section>
+
+    <!-- SESSIONS -->
+    <section class="section" id="sessions">
+      <div class="page-head"><h1>Session History</h1><p>Past working sessions and what shipped. Source: <span class="src">.squad/log/</span> + <span class="src">.squad/orchestration-log/</span></p></div>
+      <input class="search" id="sessSearch" placeholder="Search sessions…" />
+      <div id="sessList"></div>
+    </section>
+
+    <!-- RALPH MONITOR -->
+    <section class="section" id="ralph">
+      <div class="page-head"><h1>🔄 Ralph — Work Monitor</h1><p>Backlog watcher and keep-alive loop. Commands: <code>Ralph, go</code> · <code>Ralph, status</code> · <code>Ralph, idle</code>.</p></div>
+      <div class="grid cols-3">
+        <div class="stat"><div class="n" id="r-state">idle</div><div class="l">Monitor state</div></div>
+        <div class="stat"><div class="n" id="r-queue">0</div><div class="l">Queued work items</div></div>
+        <div class="stat"><div class="n" id="r-inbox">0</div><div class="l">Pending inbox decisions</div></div>
+      </div>
+      <div class="card">
+        <h2>Backlog queue</h2>
+        <div id="ralphQueue"></div>
+      </div>
+      <div class="card">
+        <h3>Open follow-ups (from latest session)</h3>
+        <ul id="ralphFollowups" style="margin:0;padding-left:18px;color:var(--cp-text-muted);font-size:13px"></ul>
+      </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section class="section" id="skills">
+      <div class="page-head"><h1>Skills</h1><p>Earned and foundational know-how. Confidence only goes up: low → medium → high.</p></div>
+      <div class="card">
+        <h2>Copilot-level skills <span class="note" style="font-weight:400">— coordinator playbook · <span class="src">.copilot/skills/</span></span></h2>
+        <div class="skill-grid" id="copilotSkills"></div>
+      </div>
+      <div class="card">
+        <h2>Team-level skills <span class="note" style="font-weight:400">— patterns the team discovered · <span class="src">.squad/skills/</span></span></h2>
+        <div id="teamSkills"></div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section class="section" id="analytics">
+      <div class="page-head"><h1>Analytics</h1><p>Per-agent activity and model-cost mix, derived from the orchestration log and decision ledger.</p></div>
+      <div class="card">
+        <h2>Activity by agent</h2>
+        <table><thead><tr><th>Agent</th><th>Orchestration entries</th><th>Decisions authored</th><th>Deliverables</th><th>Throughput</th></tr></thead><tbody id="activityBody"></tbody></table>
+      </div>
+      <div class="grid cols-2">
+        <div class="card">
+          <h2>Model-cost mix</h2>
+          <div id="costMix"></div>
+        </div>
+        <div class="card">
+          <h2>Deliverables shipped</h2>
+          <ul id="deliverables" style="margin:0;padding-left:18px;color:var(--cp-text-muted);font-size:13px"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- HEALTH -->
+    <section class="section" id="health">
+      <div class="page-head"><h1>Health Check</h1><p>Integrity lint of the <span class="src">.squad/</span> state. Catches broken automation and orphaned config.</p></div>
+      <div class="grid cols-3">
+        <div class="stat"><div class="n" id="h-pass" style="color:var(--cp-success)">0</div><div class="l">Passing</div></div>
+        <div class="stat"><div class="n" id="h-warn" style="color:var(--cp-warning)">0</div><div class="l">Warnings</div></div>
+        <div class="stat"><div class="n" id="h-fail" style="color:var(--cp-danger)">0</div><div class="l">Failures</div></div>
+      </div>
+      <div class="card"><div id="healthList"></div></div>
+    </section>
+  </main>
+</div>
+
+<!-- Member drawer -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="drawer" id="drawer">
+  <button class="close" id="drawerClose">×</button>
+  <div id="drawerContent"></div>
+</aside>
+
+<script>
+  // Generic offline fallback. Real data comes from the read server (/api/squad).
+  // When the server is offline the dashboard shows empty states prompting you to start it.
+  const FALLBACK = {
+    project: { name: "Squad", owner: "—", universe: "—", created: "—" },
+    members: [], routing: [], issueRouting: [], casting: [], decisions: [],
+    ceremonies: [], models: [], sessions: [], copilotSkills: [], activity: [], deliverables: [],
+    now: { focus: "Start the read server to load your squad — node tools/squad-server.mjs", area: "offline", updated: new Date().toISOString() },
+    ralph: { state: "—", queue: 0, inbox: 0, followups: [] },
+    meta: { inboxCount: 0 }
+  };
+
+  // Active dataset — starts as the snapshot, swapped for live data when the server responds.
+  let DATA = FALLBACK;
+
+  // ---- Render helpers ----
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function renderOverview() {
+    const active = DATA.members.filter((m) => m.status === "active").length;
+    const reviewers = DATA.members.filter((m) => m.reviewer).length;
+    document.getElementById("s-members").textContent = active;
+    document.getElementById("s-reviewers").textContent = reviewers;
+    document.getElementById("s-decisions").textContent = DATA.decisions.length;
+    document.getElementById("now-focus").textContent = DATA.now.focus;
+    document.getElementById("now-updated").textContent =
+      "Focus area: " + DATA.now.area + " · updated " + new Date(DATA.now.updated).toLocaleString();
+    document.getElementById("b-roster").textContent = DATA.members.length;
+    document.getElementById("b-dec").textContent = DATA.decisions.length;
+    if (DATA.project) {
+      const p = DATA.project;
+      document.getElementById("projLine").innerHTML =
+        `${esc(p.name)} · Owner: <strong>${esc(p.owner)}</strong> · ${esc(p.universe)} · Created ${esc(p.created)}`;
+      document.querySelector(".brand .sub").textContent = `${p.name.split("—")[0].trim()} · ${p.universe}`;
+    }
+  }
+
+  function renderRoster(filter = "") {
+    const f = filter.toLowerCase();
+    const grid = document.getElementById("rosterGrid");
+    const list = DATA.members.filter((m) => (m.name + " " + m.role).toLowerCase().includes(f));
+    grid.innerHTML = list.length ? list.map((m, i) => `
+      <div class="member" data-i="${DATA.members.indexOf(m)}">
+        <div class="top">
+          <div class="avatar">${m.emoji}</div>
+          <div>
+            <div class="name">${esc(m.name)}</div>
+            <div class="role">${esc(m.role)}</div>
+          </div>
+        </div>
+        <div class="meta">
+          <span class="tag ${m.status === "active" ? "ok" : ""}">${esc(m.status)}</span>
+          ${m.reviewer ? '<span class="tag review">reviewer</span>' : ""}
+          <span class="tag model">${esc(m.model)}</span>
+        </div>
+      </div>`).join("") : '<div class="empty">No members match.</div>';
+    grid.querySelectorAll(".member").forEach((el) =>
+      el.addEventListener("click", () => openDrawer(+el.dataset.i)));
+  }
+
+  function renderRouting() {
+    document.getElementById("routingBody").innerHTML = DATA.routing.map((r) =>
+      `<tr><td>${esc(r.type)}</td><td class="who">${esc(r.who)}</td><td style="color:var(--cp-text-muted)">${esc(r.ex)}</td></tr>`).join("");
+    document.getElementById("issueRoutingBody").innerHTML = DATA.issueRouting.map((r) =>
+      `<tr><td><code>${esc(r.label)}</code></td><td>${esc(r.action)}</td><td class="who">${esc(r.who)}</td></tr>`).join("");
+  }
+
+  function renderConfig() {
+    document.getElementById("modelBody").innerHTML = DATA.models.map((m) =>
+      `<tr><td class="who">${esc(m.name)}</td><td>${esc(m.role)}</td><td><span class="tag model">${esc(m.model)}</span></td><td style="color:var(--cp-text-muted)">${esc(m.why)}</td></tr>`).join("");
+  }
+
+  function renderCasting() {
+    document.getElementById("castingBody").innerHTML = DATA.casting.map((c) =>
+      `<tr><td><code>${esc(c.slug)}</code></td><td class="who">${esc(c.name)}</td><td>${esc(c.universe)}</td><td class="mono">${esc(c.created)}</td><td><span class="tag ok">${esc(c.status)}</span></td></tr>`).join("");
+  }
+
+  function renderDecisions(filter = "") {
+    const f = filter.toLowerCase();
+    const list = DATA.decisions.filter((d) => (d.title + " " + d.meta + " " + d.body).toLowerCase().includes(f));
+    document.getElementById("decTimeline").innerHTML = list.length ? list.map((d) => `
+      <div class="decision">
+        <div class="d-date">${esc(d.date)} <span class="status-chip ${d.status}">${esc(d.status)}</span></div>
+        <div class="d-title">${esc(d.title)}</div>
+        <div class="d-meta">${esc(d.meta)}</div>
+        <div class="d-body">${esc(d.body)}</div>
+      </div>`).join("") : '<div class="empty">No decisions match.</div>';
+  }
+
+  function renderCeremonies() {
+    document.getElementById("ceremoniesGrid").innerHTML = DATA.ceremonies.map((c) => `
+      <div class="card">
+        <h2>${esc(c.name)}</h2>
+        <div class="meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <span class="tag">when: ${esc(c.when)}</span>
+          <span class="tag">trigger: ${esc(c.trigger)}</span>
+          <span class="tag">facilitator: ${esc(c.facilitator)}</span>
+          <span class="tag ${c.enabled ? "ok" : ""}">${c.enabled ? "enabled" : "disabled"}</span>
+        </div>
+        <div class="note" style="margin-bottom:10px"><strong>Condition:</strong> ${esc(c.cond)}</div>
+        <h3>Agenda</h3>
+        <ul style="margin:0;padding-left:18px;color:var(--cp-text-muted);font-size:13px">${c.agenda.map((a) => `<li>${esc(a)}</li>`).join("")}</ul>
+      </div>`).join("");
+  }
+
+  function openDrawer(i) {
+    const m = DATA.members[i];
+    document.getElementById("drawerContent").innerHTML = `
+      <h2>${m.emoji} ${esc(m.name)}</h2>
+      <div class="d-role">${esc(m.role)} ${m.reviewer ? '· <span class="tag review">reviewer</span>' : ""}</div>
+      <div class="blurb">${esc(m.blurb)}</div>
+      <div class="kv">
+        <dt>Status</dt><dd><span class="tag ok">${esc(m.status)}</span></dd>
+        <dt>Model</dt><dd><span class="tag model">${esc(m.model)}</span></dd>
+        <dt>Charter</dt><dd class="src">${esc(m.charter)}</dd>
+      </div>
+      <div class="sub-h">Responsibilities</div>
+      <ul>${m.responsibilities.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>
+      <div class="sub-h">Boundaries</div>
+      <ul>${m.boundaries.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
+      ${m.reviewer ? '<div class="note">Reviewer: may approve or reject team work. On rejection, a different agent must own the revision (strict lockout).</div>' : ""}`;
+    document.getElementById("drawer").classList.add("open");
+    document.getElementById("drawerOverlay").classList.add("open");
+  }
+  function closeDrawer() {
+    document.getElementById("drawer").classList.remove("open");
+    document.getElementById("drawerOverlay").classList.remove("open");
+  }
+
+  function renderSessions(filter = "") {
+    const f = filter.toLowerCase();
+    const list = DATA.sessions.filter((s) => (s.title + " " + s.summary + " " + s.who.join(" ")).toLowerCase().includes(f));
+    document.getElementById("sessList").innerHTML = list.length ? list.map((s) => `
+      <div class="sess">
+        <div class="s-top">
+          <span class="s-date">${esc(s.date)}</span>
+          <span class="s-title">${esc(s.title)}</span>
+        </div>
+        <div class="s-sum">${esc(s.summary)}</div>
+        <div class="s-who">${s.who.map((w) => `<span class="tag">${esc(w)}</span>`).join("")}${s.outputs.map((o) => `<span class="tag ok">${esc(o)}</span>`).join("")}</div>
+      </div>`).join("") : '<div class="empty">No sessions match.</div>';
+  }
+
+  function renderRalph() {
+    document.getElementById("r-state").textContent = DATA.ralph.state;
+    document.getElementById("r-queue").textContent = DATA.ralph.queue;
+    document.getElementById("r-inbox").textContent = DATA.ralph.inbox;
+    document.getElementById("ralphQueue").innerHTML = DATA.ralph.queue === 0
+      ? '<div class="empty">Queue empty — monitor idle. Say <code>Ralph, go</code> to start picking up backlog work.</div>'
+      : "";
+    document.getElementById("ralphFollowups").innerHTML = DATA.ralph.followups.map((x) => `<li>${esc(x)}</li>`).join("");
+  }
+
+  function renderSkills() {
+    document.getElementById("copilotSkills").innerHTML = DATA.copilotSkills.map((s) => `
+      <div class="skill">
+        <span class="conf ${s.conf}">${esc(s.conf)}</span>
+        <div class="s-name">${esc(s.name)}</div>
+        <div class="s-desc">${esc(s.desc)}</div>
+      </div>`).join("");
+    document.getElementById("teamSkills").innerHTML =
+      '<div class="empty">No team-level skills earned yet.<br /><span class="note">Agents write reusable patterns to <code>.squad/skills/</code> as they discover them; confidence rises low → medium → high.</span></div>';
+    document.getElementById("b-skills").textContent = DATA.copilotSkills.length;
+  }
+
+  function renderAnalytics() {
+    document.getElementById("activityBody").innerHTML = DATA.activity.map((a) =>
+      `<tr><td class="who">${esc(a.name)}</td><td>${a.orch}</td><td>${a.decisions}</td><td>${a.deliverables}</td><td><span class="tag">${esc(a.throughput)}</span></td></tr>`).join("");
+
+    const counts = {};
+    DATA.models.forEach((m) => { counts[m.model] = (counts[m.model] || 0) + 1; });
+    const total = DATA.models.length;
+    document.getElementById("costMix").innerHTML = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1]).map(([model, n]) => {
+        const pct = Math.round((n / total) * 100);
+        return `<div class="bar-row"><span class="mono" style="font-size:12px">${esc(model)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="pct">${n}</span></div>`;
+      }).join("") + '<div class="note" style="margin-top:8px">Cost-first: fast/haiku for non-code, standard/sonnet when code is written, auto for mixed roles.</div>';
+
+    document.getElementById("deliverables").innerHTML = DATA.deliverables.map((d) => `<li>${esc(d)}</li>`).join("");
+  }
+
+  function renderHealth() {
+    const charterless = DATA.members.filter((m) => m.status === "active" && m.charter === "—" && m.name !== "Ralph");
+    const castNames = DATA.casting.map((c) => c.name);
+    const uncast = DATA.members.filter((m) => !castNames.includes(m.name) && !["Scribe", "Ralph"].includes(m.name));
+    const inbox = DATA.meta ? DATA.meta.inboxCount : 0;
+    const checks = [
+      { status: "pass", title: "`## Members` header present", detail: "team.md exposes the roster table that GitHub label workflows depend on." },
+      { status: charterless.length ? "warn" : "pass", title: "Every active member has a charter",
+        detail: charterless.length ? `Missing charter: ${charterless.map((m) => m.name).join(", ")}` : "All non-monitor members map to a charter.md (Ralph is exempt by design)." },
+      { status: uncast.length ? "fail" : "pass", title: "Casting registry covers all roles",
+        detail: uncast.length ? `Uncast: ${uncast.map((m) => m.name).join(", ")}` : "All specialist roles have persistent names; Scribe & Ralph exempt." },
+      { status: inbox === 0 ? "pass" : "warn", title: "Decisions inbox is drained",
+        detail: inbox === 0 ? ".squad/decisions/inbox/ is empty — all directives merged into the ledger." : `${inbox} directive(s) waiting in .squad/decisions/inbox/ to be merged.` },
+      { status: "pass", title: "Focus state present", detail: ".squad/identity/now.md exists and is readable." },
+      { status: "info", title: ".gitattributes merge drivers", detail: "Verify union merge for .squad/decisions.md, agents/*/history.md, log/** — not confirmed in this snapshot." }
+    ];
+    const icon = { pass: "✅", warn: "⚠️", fail: "❌", info: "ℹ️" };
+    document.getElementById("healthList").innerHTML = checks.map((c) =>
+      `<div class="hrow"><div class="hi">${icon[c.status]}</div><div><div class="ht">${c.title.replace(/`([^`]+)`/g, '<code>$1</code>')}</div><div class="hd">${esc(c.detail)}</div></div></div>`).join("");
+    document.getElementById("h-pass").textContent = checks.filter((c) => c.status === "pass").length;
+    document.getElementById("h-warn").textContent = checks.filter((c) => c.status === "warn" || c.status === "info").length;
+    document.getElementById("h-fail").textContent = checks.filter((c) => c.status === "fail").length;
+    document.getElementById("b-health").textContent = checks.filter((c) => c.status === "warn" || c.status === "fail" || c.status === "info").length;
+    document.getElementById("b-sess").textContent = DATA.sessions.length;
+  }
+
+  // ---- Nav ----
+  document.querySelectorAll("#nav button").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#nav button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const id = btn.dataset.section;
+      document.querySelectorAll(".section").forEach((s) => s.classList.toggle("active", s.id === id));
+    }));
+
+  document.getElementById("rosterSearch").addEventListener("input", (e) => renderRoster(e.target.value));
+  document.getElementById("decSearch").addEventListener("input", (e) => renderDecisions(e.target.value));
+  document.getElementById("sessSearch").addEventListener("input", (e) => renderSessions(e.target.value));
+  document.getElementById("drawerClose").addEventListener("click", closeDrawer);
+  document.getElementById("drawerOverlay").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
+
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  });
+
+  // ---- Render everything from the current DATA ----
+  function renderAll() {
+    renderOverview();
+    renderRoster();
+    renderRouting();
+    renderConfig();
+    renderCasting();
+    renderDecisions();
+    renderCeremonies();
+    renderSessions();
+    renderRalph();
+    renderSkills();
+    renderAnalytics();
+    renderHealth();
+  }
+
+  // ---- Live mode: fetch from the read server, fall back to the embedded snapshot ----
+  function setMode(live, when) {
+    const pill = document.getElementById("livePill");
+    pill.classList.toggle("live", live);
+    pill.classList.toggle("snapshot", !live);
+    document.getElementById("liveLabel").textContent = live
+      ? "Live" + (when ? " · " + new Date(when).toLocaleTimeString() : "")
+      : "Offline — start the read server";
+    pill.title = live
+      ? "Reading live state from .squad/ via the local read server"
+      : "Embedded snapshot — start the server with: node tools/squad-server.mjs";
+  }
+
+  async function loadLive() {
+    const btn = document.getElementById("refreshBtn");
+    btn.classList.add("spin");
+    try {
+      const res = await fetch("api/squad", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      DATA = json;
+      setMode(true, json.meta && json.meta.generatedAt);
+    } catch (e) {
+      DATA = FALLBACK;
+      setMode(false);
+    } finally {
+      renderAll();
+      btn.classList.remove("spin");
+    }
+  }
+
+  document.getElementById("refreshBtn").addEventListener("click", loadLive);
+
+  // ---- Init ----
+  renderAll();   // paint immediately from the snapshot
+  loadLive();    // then upgrade to live data if the server is reachable
+</script>
+</body>
+</html>
