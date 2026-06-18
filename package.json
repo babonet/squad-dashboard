@@ -1,6 +1,6 @@
 {
   "name": "squad-dashboard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A read-only web dashboard for any Squad-enabled repo. Visualizes the live .squad/ state — roster, routing, models, casting, decisions, sessions, ceremonies, skills, analytics, and health — served by a zero-dependency Node read server.",
   "type": "module",
   "bin": {
