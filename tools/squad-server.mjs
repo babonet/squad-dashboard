@@ -1,7 +1,9 @@
+#!/usr/bin/env node
 // Squad read-only server — zero dependencies (Node built-ins only).
 // Serves the dashboard and a /api/squad endpoint that parses the live .squad/ state.
 //
 //   node tools/squad-server.mjs        → http://localhost:4317
+//   npx squad-dashboard                → http://localhost:4317 (from any squad repo)
 //
 // Read-only: it never writes to .squad/. Open the dashboard via this server for
 // live data, or open the HTML file directly to use the embedded snapshot fallback.

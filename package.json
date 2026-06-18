@@ -1,0 +1,40 @@
+{
+  "name": "squad-dashboard",
+  "version": "1.0.0",
+  "description": "A read-only web dashboard for any Squad-enabled repo. Visualizes the live .squad/ state — roster, routing, models, casting, decisions, sessions, ceremonies, skills, analytics, and health — served by a zero-dependency Node read server.",
+  "type": "module",
+  "bin": {
+    "squad-dashboard": "tools/squad-server.mjs"
+  },
+  "files": [
+    "tools/squad-server.mjs",
+    "tools/squad-dashboard.html",
+    "knowledge/squad-dashboard.md",
+    "plugin.manifest.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node tools/squad-server.mjs"
+  },
+  "keywords": [
+    "squad",
+    "dashboard",
+    "read-only",
+    "agents",
+    "team"
+  ],
+  "author": "Oren Maoz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/babonet/squad-dashboard.git"
+  },
+  "homepage": "https://github.com/babonet/squad-dashboard#readme",
+  "bugs": {
+    "url": "https://github.com/babonet/squad-dashboard/issues"
+  }
+}

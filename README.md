@@ -19,7 +19,28 @@ The server never writes to `.squad/` or anywhere else. There are no POST routes,
 
 - Node.js **18+**
 
+## Quick start with npx
+
+The fastest way to run the dashboard — no files to copy, nothing to install globally.
+From the root of any Squad-enabled repo:
+
+```
+npx squad-dashboard
+```
+
+Then open **http://localhost:4317**. The package finds `.squad/` in your current
+working directory (walking up if needed) and serves the bundled dashboard UI. Override
+the detected root or port with environment variables:
+
+```
+SQUAD_ROOT=/path/to/repo SQUAD_PORT=8080 npx squad-dashboard
+```
+
+> npx downloads the package on demand and runs it from its cache — it never writes to
+> your repo. To pin a version, use `npx squad-dashboard@1.0.0`.
+
 ## How distribution works
+
 
 Squad plugins are **declarative-only**: a plugin payload may not contain scripts or
 executable files, and may only write into approved `.squad/` roots. The dashboard's
@@ -44,10 +65,10 @@ squad plugin enable squad-dashboard
 
 > Requires Squad CLI v0.10.0+. On earlier versions, copy the files in manually (see below).
 
-## Get the dashboard files
+## Get the dashboard files (manual alternative)
 
-Copy the two tool files from this repo into your project (any location works — the
-server finds `.squad/` on its own):
+Prefer to vendor the files instead of using `npx`? Copy the two tool files from this
+repo into your project (any location works — the server finds `.squad/` on its own):
 
 ```
 # from your project root
